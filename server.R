@@ -1,5 +1,5 @@
 function(input, output, session) {
-  
+#Default popup window when landing
   showModal(div(id="ModalDiv123", modalDialog(
     title = "Welcome to the Conservation Projects & Plans category Visualization Tool",
     HTML(c("<div align='left'>
@@ -12,10 +12,11 @@ function(input, output, session) {
       modalButton("Explore the Tool")),
     size = "m"
   )))
-  
+#initially hide the table on top right  
   shinyjs::hide(id="Sidebar")
-  
+#reactive value for holding the click event when user click on map shape 
 data_of_click <- reactiveValues(clickedMarker=NULL)
+#default map
 output$map <- renderLeaflet({
   leaflet() %>%
     addProviderTiles("CartoDB.Positron") %>%
@@ -23,6 +24,7 @@ output$map <- renderLeaflet({
     
 })
 
+#R function for opening documents when clicking on learn more
 shinyInput <- function(FUN, len, id, label, url) {
   inputs <- character(len)
   for (i in seq_len(len)) {
@@ -30,7 +32,7 @@ shinyInput <- function(FUN, len, id, label, url) {
   }
   inputs
 }
-
+#R function for redirecting to detail datatable when click
 shinyInput_short <- function(FUN, len, id, label) {
   inputs <- character(len)
   for (i in seq_len(len)) {
@@ -46,7 +48,7 @@ shinyInput_long <- function(FUN, len, id, label) {
   }
   inputs
 }
-
+#table to render in detailed data table page
 cleandata_MS<-subset(tabledata_MS, select=-Plan.URL)
 df_MS<-reactiveValues(data = cleandata_MS%>%
                      mutate(Action=paste(shinyInput(actionButton, 67, 'button_',url = tabledata_MS$Plan.URL))))
@@ -65,7 +67,26 @@ cleandata_FL<-subset(tabledata_FL, select=-c(Plan.URL))
 df_FL<-reactiveValues(data = cleandata_FL%>%
                      mutate(Action=paste(shinyInput(actionButton, 72, 'button_',url = tabledata_FL$Plan.URL))))
 output$Florida = DT::renderDataTable(
-  df_FL$data, server = TRUE, escape = FALSE, selection = list(mode = 'single', selected = c(1))
+  df_FL$data, server = TRUE, escape = FALSE, selection = list(mode = 'single', selected = c(1)), 
+  options = list( scrollX=TRUE,
+                 columnDefs = list(list(width = '50px', targets = c(0)),
+                                   list(width = '10px', targets = c(1)),
+                                   list(width = '10px', targets = c(2)),
+                                   list(width = '10px', targets = c(3)),
+                                   list(width = '10px', targets = c(4)),
+                                   list(width = '10px', targets = c(5)),
+                                   list(width = '100px', targets = c(6)),
+                                   list(width = '100px', targets = c(7)),
+                                   list(width = '100px', targets = c(8)),
+                                   list(width = '100px', targets = c(9)),
+                                   list(width = '100px', targets = c(10)),
+                                   list(width = '20px', targets = c(11)),
+                                   list(width = '20px', targets = c(12)),
+                                   list(width = '20px', targets = c(13)),
+                                   list(width = '20px', targets = c(14)),
+                                   list(width = '20px', targets = c(15))
+                                   
+                                   ))
 )
 
 cleandata_TX<-subset(tabledata_TX, select=-c(Plan.URL))
@@ -92,7 +113,7 @@ output$Regional = DT::renderDataTable(
     columnDefs = list(list(width = '50px', targets = "_all"))
   )
 )
-
+#event handling selection within the map
 observe({
   priorityby<-input$priority
   timeby<-input$timeframe
@@ -321,9 +342,12 @@ observe({
 df_Rshortdatage<-reactiveValues(data = shortdatage%>%
                                   mutate(Action=paste(shinyInput_short(actionButton, 340, "short_",label="Learn more"))))
 
+#map click event
 observeEvent(input$map_shape_click,{
   data_of_click$clickedMarker <- input$map_shape_click
 })
+
+#render short datatable overlay on map
 output$docs <- DT::renderDataTable({
   Region_name<-data_of_click$clickedMarker$id
   df_Rshortdatage$data[df_Rshortdatage$data$Geo.Extent==Region_name,]
@@ -331,7 +355,7 @@ output$docs <- DT::renderDataTable({
   pageLength = 5
 ),server = FALSE, escape = FALSE, selection = 'none')
 
-
+#when click learn more on overlay table, redirect to the selected one and highlight it
 observeEvent(input$select_button,{
   num<-as.numeric(strsplit(input$select_button, "_")[[1]][2])
   trail1tb<-reactive({
@@ -364,6 +388,7 @@ observeEvent(input$select_button,{
   selectRows(proxyla, which(tabledata_LA$ref_num == num))
   selectPage(proxyla, which(tabledata_LA$ref_num == num) %/% 10 + 1)
 })
+#redirect to newlly added plan when click
 observeEvent(input$form2, {
   updateTabsetPanel(session, "nav",
                     selected = "Recently Added Plans")
@@ -374,7 +399,7 @@ df_newdatage<-reactiveValues(data = cleandata_new%>%
                                   mutate(Action=paste(shinyInput(actionButton, 294, "button_",label="Learn more",url =tabledata_newly$Url))))
 
 output$Newly = renderDataTable(df_newdatage$data, server = TRUE, escape = FALSE, selection = 'single')
-
+#event handle show and hide datatable
 observeEvent(input$showpanel,{
   if(input$showpanel == F){
     show(id="Sidebar")
@@ -398,14 +423,4 @@ output$goalsTable<-renderImage({
 
 
 }
-
-
-
-
-
-
-
-
-
-
 
